@@ -1,107 +1,159 @@
-// Frontend: src/App.jsx
-import { useState } from 'react';
+// src/App.jsx
+import { useState, useRef, useEffect } from 'react';
 import axios from 'axios';
 import './App.css';
 
 function App() {
+  // --- STATES ---
   const [repoUrl, setRepoUrl] = useState('');
-  const [isLoading, setIsLoading] = useState(false);
-  const [resultData, setResultData] = useState(null);
+  const [isIngesting, setIsIngesting] = useState(false);
+  const [dbStats, setDbStats] = useState(null);
   const [error, setError] = useState(null);
 
+  // Chat States
+  const [chatInput, setChatInput] = useState('');
+  const [isTyping, setIsTyping] = useState(false);
+  const [messages, setMessages] = useState([
+    { role: 'ai', text: 'Hello! Paste a GitHub repository above to ingest it. Once embedded, you can ask me anything about the codebase.' }
+  ]);
+
+  // Auto-scroller for chat
+  const chatEndRef = useRef(null);
+  useEffect(() => {
+    chatEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+  }, [messages, isTyping]);
+
+  // --- HANDLERS ---
   const handleProcessRepo = async () => {
     if (!repoUrl) return;
-    
-    setIsLoading(true);
+    setIsIngesting(true);
     setError(null);
-    setResultData(null);
+    setDbStats(null);
 
     try {
-      const response = await axios.post(
-        'http://localhost:5001/api/repo/ingest',
-        { url: repoUrl }
-      );
-      
-      setResultData(response.data);
-      console.log("Success! Data stored in DBs:", response.data);
-      
+      const response = await axios.post('http://localhost:5001/api/repo/ingest', { url: repoUrl });
+      setDbStats({
+        files: response.data.totalFilesProcessed,
+        chunks: response.data.totalChunksCreated,
+        message: response.data.message
+      });
+      setMessages(prev => [...prev, { role: 'ai', text: `✅ Successfully ingested and embedded the repository! The codebase is now in my memory. What would you like to know?` }]);
     } catch (err) {
       setError(err.response?.data?.error || err.message);
     } finally {
-      setIsLoading(false);
+      setIsIngesting(false);
     }
   };
 
-  return (
-    <div className="app-container">
-      <header className="header">
-        <h1>🧠 Intelligent Documentation Engine</h1>
-        <p>Paste a GitHub URL to auto-generate docs and save them to Vector Memory.</p>
-      </header>
+  const handleSendMessage = async (e) => {
+    e.preventDefault();
+    if (!chatInput.trim() || !dbStats) return;
 
-      <div className="input-section">
-        <input
-          type="text"
-          className="repo-input"
-          placeholder="https://github.com/owner/repo"
-          value={repoUrl}
-          onChange={(e) => setRepoUrl(e.target.value)}
-          disabled={isLoading}
-        />
-        <button 
-          className="analyze-btn" 
-          onClick={handleProcessRepo} 
-          disabled={isLoading || !repoUrl}
-        >
-          {isLoading ? 'Scanning & Embedding...' : 'Analyze & Store Codebase'}
-        </button>
+    const userMsg = chatInput;
+    setChatInput('');
+    setMessages(prev => [...prev, { role: 'user', text: userMsg }]);
+    setIsTyping(true);
+
+    try {
+      const response = await axios.post('http://localhost:5001/api/chat/ask', {
+        question: userMsg,
+        repoUrl: repoUrl // We pass the URL so Pinecone knows which project to search!
+      });
+
+      setMessages(prev => [...prev, { 
+        role: 'ai', 
+        text: response.data.answer,
+        sources: response.data.sources 
+      }]);
+    } catch (err) {
+      setMessages(prev => [...prev, { role: 'ai', text: "❌ Connection error. Is the backend running?" }]);
+    } finally {
+      setIsTyping(false);
+    }
+  };
+
+  // --- RENDER ---
+  return (
+    <div className="app-layout">
+      
+      {/* LEFT PANEL: Control Center */}
+      <div className="sidebar">
+        <div className="branding">
+          <h1>🧠 ClariMind RAG</h1>
+          <p>Intelligent Codebase Explorer</p>
+        </div>
+
+        <div className="ingest-box">
+          <h3>1. Connect Repository</h3>
+          <input
+            type="text"
+            placeholder="https://github.com/owner/repo"
+            value={repoUrl}
+            onChange={(e) => setRepoUrl(e.target.value)}
+            disabled={isIngesting}
+          />
+          <button onClick={handleProcessRepo} disabled={isIngesting || !repoUrl}>
+            {isIngesting ? 'Embedding Vectors...' : 'Embed Codebase'}
+          </button>
+          {error && <div className="error-text">{error}</div>}
+        </div>
+
+        {dbStats && (
+          <div className="stats-box">
+            <h3>📊 Vector Database Status</h3>
+            <div className="stat-row"><span>Status:</span> <span className="green">Online</span></div>
+            <div className="stat-row"><span>Files Read:</span> <span>{dbStats.files}</span></div>
+            <div className="stat-row"><span>Chunks Embedded:</span> <span>{dbStats.chunks}</span></div>
+          </div>
+        )}
       </div>
 
-      {error && (
-        <div className="error-box">
-          <p>❌ {error}</p>
-        </div>
-      )}
-
-      {resultData && resultData.documentedResults && (
-        <div className="results-dashboard">
-          <div className="stats-bar success-bar">
-            <span>✅ {resultData.message}</span>
-            <span>💾 {resultData.documentedResults.length} Chunks Embedded in Pinecone</span>
-          </div>
-
-          <div className="chunks-container">
-            {resultData.documentedResults.map((chunk, index) => (
-              <div key={index} className="chunk-card">
-                <div className="chunk-header">
-                  <div>
-                    <span className="file-badge">{chunk.filePath}</span>
-                    <span className="type-badge">{chunk.type}</span>
-                  </div>
-                  {/* This shows the actual Pinecone Math ID! */}
-                  <span className="vector-badge" title="Pinecone Vector ID">
-                    🧠 Vector: {chunk.pineconeId.slice(0, 8)}...
-                  </span>
-                </div>
+      {/* RIGHT PANEL: Chat Interface */}
+      <div className="chat-interface">
+        <div className="chat-window">
+          {messages.map((msg, idx) => (
+            <div key={idx} className={`message-wrapper ${msg.role}`}>
+              <div className="message-bubble">
+                {/* Text rendered with pre-wrap for Markdown spacing */}
+                <pre className="message-text">{msg.text}</pre>
                 
-                <div className="chunk-body">
-                  <div className="code-block">
-                    <h3>Raw Code</h3>
-                    <pre><code>{chunk.content}</code></pre>
+                {/* Render source files if the AI used them */}
+                {msg.sources && msg.sources.length > 0 && (
+                  <div className="sources-box">
+                    <strong>📄 Sources read:</strong>
+                    <ul>
+                      {msg.sources.map((src, i) => <li key={i}>{src}</li>)}
+                    </ul>
                   </div>
-
-                  <div className="ai-block">
-                    <h3>AI Explanation</h3>
-                    <pre className="ai-markdown" style={{ whiteSpace: 'pre-wrap' }}>
-                      {chunk.aiDocumentation}
-                    </pre>
-                  </div>
-                </div>
+                )}
               </div>
-            ))}
-          </div>
+            </div>
+          ))}
+          {isTyping && (
+            <div className="message-wrapper ai">
+              <div className="message-bubble typing-indicator">
+                Searching Pinecone & Thinking...
+              </div>
+            </div>
+          )}
+          <div ref={chatEndRef} />
         </div>
-      )}
+
+        {/* Chat Input Area */}
+        <form className="input-area" onSubmit={handleSendMessage}>
+          <input
+            type="text"
+            placeholder={dbStats ? "Ask a question about the codebase..." : "Ingest a repo first to start chatting!"}
+            value={chatInput}
+            onChange={(e) => setChatInput(e.target.value)}
+            disabled={!dbStats || isTyping}
+          />
+          <button type="submit" disabled={!dbStats || !chatInput.trim() || isTyping}>
+            Send
+          </button>
+        </form>
+      </div>
+
     </div>
   );
 }

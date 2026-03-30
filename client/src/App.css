@@ -1,148 +1,186 @@
-/* App.css */
-.app-container {
-  max-width: 1200px;
-  margin: 0 auto;
-  padding: 2rem;
-  font-family: system-ui, -apple-system, sans-serif;
+/* src/App.css */
+:root {
+  --bg-dark: #0f172a;
+  --bg-panel: #1e293b;
+  --text-main: #f8fafc;
+  --text-muted: #94a3b8;
+  --accent: #3b82f6;
+  --accent-hover: #2563eb;
+  --user-msg: #3b82f6;
+  --ai-msg: #334155;
 }
 
-.header {
-  text-align: center;
-  margin-bottom: 2rem;
-}
+* { box-sizing: border-box; margin: 0; padding: 0; }
 
-.input-section {
-  display: flex;
-  gap: 1rem;
-  justify-content: center;
-  margin-bottom: 3rem;
-}
-
-.repo-input {
-  width: 500px;
-  padding: 0.8rem;
-  font-size: 1rem;
-  border: 1px solid #ccc;
-  border-radius: 8px;
-}
-
-.analyze-btn {
-  padding: 0.8rem 1.5rem;
-  font-size: 1rem;
-  background-color: #007bff;
-  color: white;
-  border: none;
-  border-radius: 8px;
-  cursor: pointer;
-}
-
-.analyze-btn:disabled {
-  background-color: #a0cbf7;
-  cursor: not-allowed;
-}
-
-.error-box {
-  background-color: #fee2e2;
-  color: #991b1b;
-  padding: 1rem;
-  border-radius: 8px;
-  text-align: center;
-  margin-bottom: 2rem;
-}
-
-.stats-bar {
-  display: flex;
-  gap: 2rem;
-  background-color: #f3f4f6;
-  padding: 1rem;
-  border-radius: 8px;
-  margin-bottom: 2rem;
-  font-weight: bold;
-}
-
-.chunk-card {
-  border: 1px solid #e5e7eb;
-  border-radius: 8px;
-  margin-bottom: 2rem;
+body {
+  font-family: 'Inter', system-ui, sans-serif;
+  background-color: var(--bg-dark);
+  color: var(--text-main);
+  height: 100vh;
   overflow: hidden;
 }
 
-.chunk-header {
-  background-color: #1f2937;
+.app-layout {
+  display: flex;
+  height: 100vh;
+  width: 100vw;
+}
+
+/* --- SIDEBAR (Control Center) --- */
+.sidebar {
+  width: 350px;
+  background-color: var(--bg-panel);
+  border-right: 1px solid #334155;
+  padding: 2rem 1.5rem;
+  display: flex;
+  flex-direction: column;
+  gap: 2rem;
+}
+
+.branding h1 { font-size: 1.5rem; margin-bottom: 0.5rem; }
+.branding p { color: var(--text-muted); font-size: 0.9rem; }
+
+.ingest-box, .stats-box {
+  background-color: #0f172a;
+  padding: 1.5rem;
+  border-radius: 8px;
+  border: 1px solid #334155;
+}
+
+.ingest-box h3, .stats-box h3 {
+  font-size: 1rem;
+  margin-bottom: 1rem;
+  color: #cbd5e1;
+}
+
+.ingest-box input {
+  width: 100%;
+  padding: 0.8rem;
+  border-radius: 6px;
+  border: 1px solid #475569;
+  background-color: #1e293b;
   color: white;
-  padding: 0.8rem 1rem;
+  margin-bottom: 1rem;
+}
+
+.ingest-box button {
+  width: 100%;
+  padding: 0.8rem;
+  background-color: var(--accent);
+  color: white;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  font-weight: bold;
+  transition: background 0.2s;
+}
+
+.ingest-box button:disabled { background-color: #475569; cursor: not-allowed; }
+.ingest-box button:not(:disabled):hover { background-color: var(--accent-hover); }
+
+.error-text { color: #ef4444; margin-top: 1rem; font-size: 0.85rem; }
+
+.stat-row {
   display: flex;
   justify-content: space-between;
+  margin-bottom: 0.5rem;
+  font-size: 0.9rem;
+  color: var(--text-muted);
+}
+.green { color: #10b981; font-weight: bold; }
+
+/* --- CHAT INTERFACE --- */
+.chat-interface {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  background-color: var(--bg-dark);
 }
 
-.type-badge {
-  background-color: #3b82f6;
-  padding: 0.2rem 0.5rem;
-  border-radius: 4px;
-  font-size: 0.8rem;
+.chat-window {
+  flex: 1;
+  padding: 2rem;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
 }
 
-/* Update your chunk-body to align the columns nicely */
-.chunk-body {
+.message-wrapper {
+  display: flex;
+  width: 100%;
+}
+.message-wrapper.user { justify-content: flex-end; }
+.message-wrapper.ai { justify-content: flex-start; }
+
+.message-bubble {
+  max-width: 75%;
+  padding: 1rem 1.5rem;
+  border-radius: 12px;
+  font-size: 0.95rem;
+  line-height: 1.5;
+}
+
+.user .message-bubble {
+  background-color: var(--user-msg);
+  color: white;
+  border-bottom-right-radius: 2px;
+}
+
+.ai .message-bubble {
+  background-color: var(--ai-msg);
+  border-bottom-left-radius: 2px;
+}
+
+.message-text {
+  font-family: inherit;
+  white-space: pre-wrap; /* Keeps Gemini's formatting intact */
+}
+
+/* RAG Sources Display */
+.sources-box {
+  margin-top: 1rem;
+  padding-top: 1rem;
+  border-top: 1px solid #475569;
+  font-size: 0.85rem;
+  color: #cbd5e1;
+}
+.sources-box ul { margin-top: 0.5rem; padding-left: 1.5rem; color: #94a3b8; }
+
+.typing-indicator { font-style: italic; color: var(--text-muted); }
+
+/* --- INPUT AREA --- */
+.input-area {
+  padding: 1.5rem 2rem;
+  background-color: var(--bg-panel);
+  border-top: 1px solid #334155;
   display: flex;
   gap: 1rem;
-  align-items: flex-start; /* Keeps them aligned to the top */
 }
 
-/* Update the containers to handle the 50/50 split */
-.code-block, .ai-block {
+.input-area input {
   flex: 1;
   padding: 1rem;
-  width: 50%;
-}
-
-/* FIX 1: Make the Code block scrollable */
-.code-block pre {
-  background-color: #f8fafc;
-  padding: 1rem;
-  border-radius: 6px;
-  overflow-x: auto; /* Horizontal scrolling */
-  overflow-y: auto; /* Vertical scrolling */
-  max-height: 400px; /* Stops the card from stretching infinitely */
-}
-
-/* FIX 2: Make the AI Markdown block scrollable */
-.ai-markdown {
-  font-family: inherit;
-  line-height: 1.6;
-  color: #374151;
-  overflow-y: auto; /* Vertical scrolling */
-  max-height: 400px; /* Matches the code block height */
-  padding-right: 10px; /* Gives the scrollbar a little breathing room */
-}
-
-/* OPTIONAL PRO-TIP: Make the scrollbars look sleek (Webkit browsers) */
-::-webkit-scrollbar {
-  width: 8px;
-  height: 8px;
-}
-::-webkit-scrollbar-track {
-  background: #f1f1f1; 
-  border-radius: 4px;
-}
-::-webkit-scrollbar-thumb {
-  background: #c1c1c1; 
-  border-radius: 4px;
-}
-::-webkit-scrollbar-thumb:hover {
-  background: #a8a8a8; 
-}
-
-.vector-badge {
-  background-color: #10b981;
+  border-radius: 8px;
+  border: 1px solid #475569;
+  background-color: var(--bg-dark);
   color: white;
-  padding: 0.2rem 0.6rem;
-  border-radius: 4px;
-  font-size: 0.75rem;
-  font-family: monospace;
+  font-size: 1rem;
 }
-.success-bar {
-  background-color: #d1fae5;
-  color: #065f46;
-  border: 1px solid #10b981;
+
+.input-area button {
+  padding: 0 2rem;
+  background-color: var(--accent);
+  color: white;
+  border: none;
+  border-radius: 8px;
+  font-weight: bold;
+  cursor: pointer;
 }
+.input-area button:disabled { background-color: #475569; cursor: not-allowed; }
+
+/* Custom Scrollbar */
+::-webkit-scrollbar { width: 8px; }
+::-webkit-scrollbar-track { background: var(--bg-dark); }
+::-webkit-scrollbar-thumb { background: #475569; border-radius: 4px; }
+::-webkit-scrollbar-thumb:hover { background: #64748b; }
