@@ -1,38 +1,92 @@
+import crypto from 'crypto'; // Built into Node.js for generating unique IDs
+import { extractOwnerAndRepo, filterRelevantFiles } from '../utils/githubHelper.js';
+import { fetchRepoTree, fetchRawCodeFiles } from '../services/githubService.js';
+import { chunkCodeIntelligently } from '../services/astService.js';
+import { generateDocForChunk, generateEmbedding } from '../services/aiService.js';
+import { saveVectorsToPinecone } from '../services/pineconeService.js';
+import { Chunk } from '../models/Chunk.js'; // The MongoDB Model
+
 export const repoIngest = async (req, res) => {
     try {
         const { url } = req.body;        
+        console.log(`\n🚀 Starting Analysis for: ${url}`);
 
-        const urlPart = url.replace('https://github.com/', '').split('/');
-        const owner = urlPart[0];
-        const repo = urlPart[1].replace('.git',''); // Excellent addition!
+        // --- PHASE 1 & 2: INGESTION & CHUNKING ---
+        const { owner, repo } = extractOwnerAndRepo(url);
+        const repoData = await fetchRepoTree(owner, repo);
+        const cleanFilesList = filterRelevantFiles(repoData.tree);
+        const finalCodebase = await fetchRawCodeFiles(owner, repo, cleanFilesList);
         
-        const githubApiUrl = `https://api.github.com/repos/${owner}/${repo}/git/trees/main?recursive=1`;
-        
-        // FIX 1: Added the User-Agent header so GitHub doesn't block us
-        const response = await fetch(githubApiUrl, {
-            headers: {
-                "User-Agent": "Intelligent-Docs-App" 
+        let allProjectChunks = [];
+        finalCodebase.forEach(file => {
+            if (file.path.endsWith('.js') || file.path.endsWith('.jsx')) {
+                allProjectChunks.push(...chunkCodeIntelligently(file.content, file.path));
             }
         });
-        
-        // FIX 2: Added 'await' so we actually get the JSON object
-        const repoData = await response.json();
 
-        // Safety check to prevent crashing if the repo is private or branch is wrong
-        if (!repoData.tree) {
-            return res.status(400).json({ 
-                error: "GitHub refused to send the tree.",
-                details: repoData.message 
-            });
+        console.log(`🔪 Chopped repo into ${allProjectChunks.length} logical chunks.`);
+
+        // --- PHASE 3 & 4: AI & DUAL-DATABASE STORAGE ---
+        console.log("🧠 Generating Docs & Embeddings (Processing first 3 chunks for testing)...");
+        
+        const testChunks = allProjectChunks.slice(0, 3);
+        const dbRecords = [];
+        const pineconeVectors = [];
+
+        for (const chunk of testChunks) {
+            console.log(`   -> Processing: ${chunk.type} in ${chunk.filePath}`);
+            
+            // 1. Generate the human-readable documentation
+            const explanation = await generateDocForChunk(chunk);
+            
+            // 2. Generate the math vector (We embed both the code AND the explanation for better search)
+            const textToEmbed = `Code:\n${chunk.content}\n\nExplanation:\n${explanation}`;
+            const embeddingArray = await generateEmbedding(textToEmbed);
+
+            if (embeddingArray) {
+                // 3. Create a unique ID to link Mongo and Pinecone
+                const uniqueId = crypto.randomUUID();
+
+                // 4. Prep data for MongoDB
+                dbRecords.push({
+                    repoUrl: url,
+                    filePath: chunk.filePath,
+                    type: chunk.type,
+                    content: chunk.content,
+                    aiDocumentation: explanation,
+                    pineconeId: uniqueId
+                });
+
+                // 5. Prep data for Pinecone
+                pineconeVectors.push({
+                    id: uniqueId,
+                    values: embeddingArray,
+                    metadata: { 
+                        filePath: chunk.filePath,
+                        repoUrl: url
+                    }
+                });
+            }
         }
-        
-        console.log(`Successfully fetched blueprint for ${owner}/${repo}. Found ${repoData.tree.length} items.`);
-        console.log(repoData.tree);
 
-        res.json({ message: "Blueprint fetched!", totalFiles: repoData.tree.length });
+        // 6. Save to MongoDB in one massive batch!
+        await Chunk.insertMany(dbRecords);
+        console.log(`🍃 Saved ${dbRecords.length} chunks to MongoDB.`);
+
+        // 7. Save to Pinecone in one massive batch!
+        if (pineconeVectors.length > 0) {
+            await saveVectorsToPinecone(pineconeVectors);
+        }
+
+        console.log("✨ Full Ingestion and Storage Complete!");
+
+        res.json({ 
+            message: "Code successfully analyzed and stored in DBs!", 
+            documentedResults: dbRecords // Send the Mongo records back to React
+        });
 
     } catch (error) {
-        console.error(error);
-        res.status(500).json({ error: "Failed to fetch repository" });
+        console.error("❌ System Error:", error);
+        res.status(500).json({ error: "Failed to process repository" });
     }
 }
