@@ -8,6 +8,7 @@
   --accent-hover: #2563eb;
   --user-msg: #3b82f6;
   --ai-msg: #334155;
+  --border-color: #334155;
 }
 
 * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -20,21 +21,25 @@ body {
   overflow: hidden;
 }
 
+/* --- OVERALL ARCHITECTURE --- */
 .app-layout {
   display: flex;
   height: 100vh;
   width: 100vw;
+  overflow: hidden;
 }
 
 /* --- SIDEBAR (Control Center) --- */
 .sidebar {
   width: 350px;
   background-color: var(--bg-panel);
-  border-right: 1px solid #334155;
+  border-right: 1px solid var(--border-color);
   padding: 2rem 1.5rem;
   display: flex;
   flex-direction: column;
   gap: 2rem;
+  flex-shrink: 0; /* Prevents sidebar from shrinking when split-screen opens */
+  overflow-y: auto;
 }
 
 .branding h1 { font-size: 1.5rem; margin-bottom: 0.5rem; }
@@ -44,7 +49,7 @@ body {
   background-color: #0f172a;
   padding: 1.5rem;
   border-radius: 8px;
-  border: 1px solid #334155;
+  border: 1px solid var(--border-color);
 }
 
 .ingest-box h3, .stats-box h3 {
@@ -89,12 +94,59 @@ body {
 }
 .green { color: #10b981; font-weight: bold; }
 
-/* --- CHAT INTERFACE --- */
-.chat-interface {
+
+/* --- MAIN CONTENT AREA (Wrapper for Docs & Chat) --- */
+.main-content-area {
   flex: 1;
+  display: flex;
+  overflow: hidden;
+  background-color: var(--bg-dark);
+}
+
+/* --- DOCUMENTATION PANEL (Center) --- */
+.documentation-panel {
+  flex: 1; /* Takes up all remaining space to the left of the chat */
   display: flex;
   flex-direction: column;
   background-color: var(--bg-dark);
+}
+
+.doc-header {
+  padding: 1.5rem 2rem;
+  border-bottom: 1px solid var(--border-color);
+  background-color: var(--bg-panel);
+}
+
+.doc-header h2 {
+  font-size: 1.25rem;
+  color: #38bdf8;
+  margin: 0;
+}
+
+.doc-body {
+  flex: 1;
+  padding: 2.5rem;
+  overflow-y: auto;
+}
+
+
+/* --- CHAT INTERFACE (Right) --- */
+.chat-interface {
+  display: flex;
+  flex-direction: column;
+  transition: width 0.3s ease, background-color 0.3s ease;
+}
+
+/* When Docs are NOT showing */
+.chat-interface.full-mode {
+  flex: 1; 
+}
+
+/* When Docs ARE showing */
+.chat-interface.split-mode {
+  width: 450px; 
+  background-color: var(--bg-panel);
+  border-left: 1px solid var(--border-color);
 }
 
 .chat-window {
@@ -114,7 +166,7 @@ body {
 .message-wrapper.ai { justify-content: flex-start; }
 
 .message-bubble {
-  max-width: 75%;
+  max-width: 85%; /* Slightly wider to accommodate code blocks */
   padding: 1rem 1.5rem;
   border-radius: 12px;
   font-size: 0.95rem;
@@ -130,11 +182,12 @@ body {
 .ai .message-bubble {
   background-color: var(--ai-msg);
   border-bottom-left-radius: 2px;
+  border: 1px solid #475569; /* Helps pop against the dark background */
 }
 
 .message-text {
   font-family: inherit;
-  white-space: pre-wrap; /* Keeps Gemini's formatting intact */
+  white-space: normal; /* react-markdown handles the spacing now! */
 }
 
 /* RAG Sources Display */
@@ -153,7 +206,7 @@ body {
 .input-area {
   padding: 1.5rem 2rem;
   background-color: var(--bg-panel);
-  border-top: 1px solid #334155;
+  border-top: 1px solid var(--border-color);
   display: flex;
   gap: 1rem;
 }
@@ -168,19 +221,76 @@ body {
   font-size: 1rem;
 }
 
+.input-area input:focus {
+  outline: none;
+  border-color: var(--accent);
+}
+
 .input-area button {
-  padding: 0 2rem;
+  padding: 0 1.5rem;
   background-color: var(--accent);
   color: white;
   border: none;
   border-radius: 8px;
   font-weight: bold;
   cursor: pointer;
+  transition: background 0.2s;
 }
 .input-area button:disabled { background-color: #475569; cursor: not-allowed; }
+.input-area button:not(:disabled):hover { background-color: var(--accent-hover); }
 
 /* Custom Scrollbar */
 ::-webkit-scrollbar { width: 8px; }
-::-webkit-scrollbar-track { background: var(--bg-dark); }
+::-webkit-scrollbar-track { background: transparent; }
 ::-webkit-scrollbar-thumb { background: #475569; border-radius: 4px; }
 ::-webkit-scrollbar-thumb:hover { background: #64748b; }
+
+/* --- MARKDOWN STYLING UPGRADES --- */
+.markdown-body {
+  font-family: inherit;
+  line-height: 1.6;
+}
+
+/* Typography for the Master Documentation */
+.markdown-body h1 { font-size: 2rem; margin-bottom: 1.5rem; color: #f8fafc; border-bottom: 1px solid #334155; padding-bottom: 0.5rem; }
+.markdown-body h2 { font-size: 1.5rem; margin-top: 2rem; margin-bottom: 1rem; color: #e2e8f0; }
+.markdown-body h3 { font-size: 1.25rem; margin-top: 1.5rem; margin-bottom: 0.75rem; color: #cbd5e1; }
+.markdown-body strong { color: #f8fafc; }
+
+.markdown-body p { margin-bottom: 1rem; }
+.markdown-body p:last-child { margin-bottom: 0; }
+
+.markdown-body ul, .markdown-body ol {
+  margin-left: 1.5rem;
+  margin-bottom: 1rem;
+}
+.markdown-body li { margin-bottom: 0.25rem; }
+
+/* Style inline code block (e.g. `const x = 5`) */
+.markdown-body code {
+  background-color: rgba(0, 0, 0, 0.3);
+  padding: 0.2rem 0.4rem;
+  border-radius: 4px;
+  font-family: 'Courier New', Courier, monospace;
+  font-size: 0.9em;
+  color: #38bdf8;
+}
+
+/* Style large multiline code blocks */
+.markdown-body pre {
+  background-color: #0f172a;
+  padding: 1rem;
+  border-radius: 8px;
+  overflow-x: auto;
+  margin-top: 1rem;
+  margin-bottom: 1.5rem;
+  border: 1px solid #334155;
+}
+
+.markdown-body pre code {
+  background-color: transparent;
+  padding: 0;
+  border-radius: 0;
+  color: #e2e8f0;
+  display: block;
+}

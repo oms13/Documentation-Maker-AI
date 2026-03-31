@@ -1,4 +1,3 @@
-// src/controllers/chat.controller.js
 import { generateEmbedding, generateAnswerFromContext } from '../services/aiService.js';
 import { searchSimilarVectors } from '../services/pineconeService.js';
 import { Chunk } from '../models/Chunk.js';

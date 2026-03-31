@@ -83,3 +83,34 @@ INSTRUCTIONS:
         return "Sorry, I encountered an error while trying to answer your question.";
     }
 };
+
+export const generateMasterRepoDoc = async (allChunkExplanations, repoUrl) => {
+    try {
+        const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash" });
+
+        const prompt = `
+        You are an elite Senior Software Architect. 
+        I am going to give you a massive list of explanations for every single file and function in a repository located at: ${repoUrl}
+
+        Your job is to synthesize all of these individual pieces into one, cohesive, highly professional "Master Documentation" Markdown file.
+        
+        It must include:
+        1. A catchy title and a high-level summary of what the entire project actually does.
+        2. A "Tech Stack" section based on the technologies you see used in the chunks.
+        3. A "Core Architecture" section explaining how the main pieces connect together.
+        4. A "System Flow" Diagram. You MUST generate a Mermaid.js flowchart visualizing the data flow and component interactions. Wrap this strictly in a Markdown mermaid code block (\`\`\`mermaid ... \`\`\`) and use a top-down graph (graph TD).
+        5. A breakdown of the primary folders/files and their responsibilities.
+        
+        Make it clean, use emojis, use bolding, and format it beautifully in Markdown. Do not include raw code unless absolutely necessary for a quick example.
+
+        Here are the individual chunk explanations:
+        ${allChunkExplanations}
+        `;
+
+        const result = await model.generateContent(prompt);
+        return result.response.text();
+    } catch (error) {
+        console.error("❌ Failed to generate master documentation:", error);
+        return "Documentation synthesis failed. Please try chatting with the codebase instead.";
+    }
+};

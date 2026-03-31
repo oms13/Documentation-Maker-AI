@@ -1,12 +1,30 @@
 import mongoose from 'mongoose';
 
 const chunkSchema = new mongoose.Schema({
-    repoUrl: { type: String, required: true },
-    filePath: { type: String, required: true },
-    type: { type: String, required: true },
-    content: { type: String, required: true }, // Raw code
-    aiDocumentation: { type: String, required: true }, // Gemini's explanation
-    pineconeId: { type: String, required: true } // The link to the math vector!
+    filePath: {
+        type: String,
+        required: true
+    },
+    type: {
+        type: String,
+        required: true
+    },
+    content: {
+        type: String,
+        required: true
+    },
+    aiDocumentation: {
+        type: String,
+        required: true
+    },
+    pineconeId: {
+        type: String,
+        required: true
+    },
+    repoId: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'Repo'
+    }
 }, { timestamps: true });
 
 export const Chunk = mongoose.model('Chunk', chunkSchema);
