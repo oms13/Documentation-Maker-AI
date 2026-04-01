@@ -1,0 +1,139 @@
+/* --- CONTAINER SETTINGS --- */
+.factory-bg-container {
+  position: absolute;
+  top: 0; left: 0; right: 0; bottom: 0;
+  background-color: #fafafa; /* Soft light theme base */
+  z-index: 0; /* Keeps it strictly in the background */
+  overflow: hidden;
+  pointer-events: none; /* Prevents it from blocking clicks on the real UI */
+}
+
+.factory-svg {
+  width: 100%;
+  height: 100%;
+  opacity: 0.85; /* Slight fade so the main app content pops */
+}
+
+/* --- TYPOGRAPHY & SHAPES --- */
+.box-shape, .file-shape {
+  fill: #ffffff;
+  stroke: #cbd5e1;
+  stroke-width: 2;
+}
+
+.doc-shape {
+  fill: #f0f9ff;
+  stroke: #7dd3fc;
+  stroke-width: 2;
+}
+
+.box-label, .file-text, .doc-text, .comp-label, .person-label, .belt-label, .machine-label {
+  font-family: 'Inter', system-ui, sans-serif;
+  font-size: 14px;
+  font-weight: 700;
+  fill: #64748b;
+  text-anchor: middle;
+  letter-spacing: 1px;
+}
+
+.doc-text {
+  fill: #0369a1;
+}
+
+/* --- MICRO-INTERACTIONS & GLOWS --- */
+.machine-core {
+  fill: rgba(56, 189, 248, 0.2);
+  stroke: #38bdf8;
+  stroke-width: 4;
+  animation: corePulse 3s ease-in-out infinite alternate;
+}
+
+@keyframes corePulse {
+  0% { fill: rgba(56, 189, 248, 0.1); stroke-width: 3; r: 28; }
+  100% { fill: rgba(139, 92, 246, 0.4); stroke-width: 6; r: 32; }
+}
+
+/* --- BELT ITEM ANIMATIONS --- */
+/* The belt is rotated via SVG, so we just animate the X axis! */
+.in-item {
+  animation: beltMoveIn 9s linear infinite;
+  opacity: 0;
+}
+
+.out-item {
+  animation: beltMoveOut 9s linear infinite;
+  opacity: 0;
+}
+
+/* Stagger the 3 items to create a continuous flow */
+.delay-0 { animation-delay: 0s; }
+.delay-1 { animation-delay: 3s; }
+.delay-2 { animation-delay: 6s; }
+
+@keyframes beltMoveIn {
+  0%   { transform: translateX(-150px); opacity: 0; }
+  10%  { opacity: 1; }
+  45%  { opacity: 1; }
+  50%  { transform: translateX(500px); opacity: 0; } /* Enters Machine */
+  100% { transform: translateX(500px); opacity: 0; }
+}
+
+@keyframes beltMoveOut {
+  0%   { transform: translateX(0px); opacity: 0; }
+  50%  { transform: translateX(0px); opacity: 0; }
+  55%  { opacity: 1; transform: translateX(50px); } /* Exits Machine */
+  90%  { opacity: 1; }
+  100% { transform: translateX(800px); opacity: 0; }
+}
+
+/* --- DATA STREAM (TUBE) ANIMATION --- */
+.data-packet {
+  fill: #38bdf8;
+  opacity: 0;
+  animation: shootData 4s cubic-bezier(0.4, 0, 0.2, 1) infinite;
+}
+
+.p1 { animation-delay: 0s; }
+.p2 { animation-delay: 1.2s; fill: #8b5cf6; } /* Mix purple and blue dots */
+.p3 { animation-delay: 2.4s; }
+
+@keyframes shootData {
+  0%   { transform: translateX(0px); opacity: 0; }
+  10%  { opacity: 1; }
+  85%  { opacity: 1; }
+  95%  { transform: translateX(560px); opacity: 0; } /* Hits the 'O' */
+  100% { transform: translateX(560px); opacity: 0; }
+}
+
+/* --- CHAT UI ANIMATION --- */
+.chat-bubble {
+  fill: #e2e8f0;
+}
+.chat-bubble.right {
+  fill: #bae6fd;
+}
+
+.chat-bubble {
+  animation: typeMessage 6s infinite step-end;
+}
+.chat-bubble.right {
+  animation-delay: 2s;
+}
+.chat-bubble.delay {
+  animation-delay: 4s;
+}
+
+@keyframes typeMessage {
+  0%   { opacity: 0; transform: translateY(5px); }
+  10%  { opacity: 1; transform: translateY(0); }
+  90%  { opacity: 1; }
+  100% { opacity: 0; }
+}
+
+/* --- RESPONSIVENESS --- */
+@media (max-width: 768px) {
+  /* On small screens, hide the storage boxes to prevent clutter */
+  .storage-boxes {
+    display: none;
+  }
+}

@@ -2,13 +2,11 @@ import crypto from 'crypto';
 import { extractOwnerAndRepo, filterRelevantFiles } from '../utils/githubHelper.js';
 import { fetchRawCodeFiles, fetchRepoTree } from '../services/githubService.js';
 import { chunkCodeIntelligently } from '../services/astService.js';
-// 🚨 Added generateMasterRepoDoc here
 import { generateDocForChunk, generateEmbedding, generateMasterRepoDoc } from '../services/aiService.js';
-// 🚨 Added updateRepoDocumentation here
 import { createRepoDoc, saveRecordsToDb, updateRepoDocumentation } from '../services/mongoService.js';
 import { saveVectorsToPinecone } from '../services/pineconeService.js';
 
-const delay = (ms) => new Promise(resolve => setTimeout(resolve, ms));
+const delay = (ms) => new Promise(resolve => setTimeout(resolve, ms)); 
 
 export const repoIngest = async (req, res) => {
     try {
@@ -101,6 +99,7 @@ export const repoIngest = async (req, res) => {
 
         // --- 📝 NEW AUTO-DOCUMENTER LOGIC ---
         console.log("📝 Synthesizing Master Documentation...");
+        // //COMMENT FROM HERE
         // if (repoInfo.finalDocumentation) {
         //     return res.json({
         //         message: "Code successfully analyzed and documented!",
@@ -109,6 +108,7 @@ export const repoIngest = async (req, res) => {
         //     });
         // }
         // const dbRecords = repoInfo.chunks; //just for testing REMOVE IT!!!!!!!!!!
+        // // TO HERE
         const allExplanations = dbRecords.map(record => `File: ${record.filePath}\nWhat it does: ${record.aiDocumentation}`).join('\n\n');
 
         const masterDoc = await generateMasterRepoDoc(allExplanations, url);
