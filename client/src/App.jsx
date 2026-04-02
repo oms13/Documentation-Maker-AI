@@ -111,7 +111,7 @@ function App() {
   return (
     <div className="app-container">
       <div className="bg-animation"></div> {/*CHANGE IT WITH FactoryBackground*/}
-
+        
       {/* --- HOME VIEW --- */}
       {view === 'home' && (
         <div className="home-view fade-in">

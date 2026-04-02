@@ -1,0 +1,221 @@
+/* --- SCENE & CAMERA RIG --- */
+.factory-bg-container {
+  position: absolute;
+  top: 0; left: 0; right: 0; bottom: 0;
+  background-color: #fafafa;
+  overflow: hidden;
+  pointer-events: none; /* Let clicks pass through to the chat UI */
+  z-index: 0;
+}
+
+.camera-rig {
+  position: absolute;
+  top: 50%; left: 50%;
+  perspective: 3000px;
+  transform-style: preserve-3d;
+  opacity: 0.8; /* Keeps the background subtle */
+}
+
+.scene-3d {
+  position: absolute;
+  width: 1000px; height: 1000px;
+  /* The Magic Isometric Projection Math */
+  transform: translate(-50%, -50%) rotateX(60deg) rotateZ(-45deg);
+  transform-style: preserve-3d;
+}
+
+/* --- THE FLOOR GRID --- */
+.floor-grid {
+  position: absolute;
+  inset: 0;
+  background-image: 
+    linear-gradient(rgba(148, 163, 184, 0.15) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(148, 163, 184, 0.15) 1px, transparent 1px);
+  background-size: 50px 50px;
+  transform: translateZ(0);
+}
+
+/* --- 3D BLOCK GEOMETRY CALCULATOR --- */
+.block-3d {
+  position: absolute;
+  width: var(--w);
+  height: var(--h);
+  transform-style: preserve-3d;
+  transform: translate3d(var(--x), var(--y), var(--z));
+}
+
+.face {
+  position: absolute;
+  box-sizing: border-box;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+}
+
+/* Top Face: Elevated by Depth (Z) */
+.top {
+  width: var(--w); height: var(--h);
+  transform: translateZ(var(--d));
+}
+
+/* Front Face: Hinged at the bottom, rotated 90deg down */
+.front {
+  width: var(--w); height: var(--d);
+  top: 100%; left: 0;
+  transform-origin: top;
+  transform: rotateX(-90deg);
+}
+
+/* Right Face: Hinged at the right, rotated 90deg right */
+.right {
+  width: var(--d); height: var(--h);
+  top: 0; left: 100%;
+  transform-origin: left;
+  transform: rotateY(90deg);
+}
+
+/* --- DYNAMIC 3D DROP SHADOWS --- */
+.block-3d::before {
+  content: '';
+  position: absolute;
+  width: var(--w); height: var(--h);
+  background: rgba(0, 0, 0, 0.15);
+  filter: blur(10px);
+  /* Automatically drops shadow to the floor based on elevation */
+  transform: translateZ(calc(var(--z) * -1));
+  top: 15px; left: 15px; /* Angle of the "sun" */
+}
+.no-shadow::before { display: none; }
+
+/* --- COLOR PALETTES --- */
+.color-white .top { background: #ffffff; border: 1px solid #e2e8f0; }
+.color-white .front { background: #f1f5f9; border: 1px solid #cbd5e1; }
+.color-white .right { background: #e2e8f0; border: 1px solid #cbd5e1; }
+
+.color-slate .top { background: #334155; }
+.color-slate .front { background: #1e293b; }
+.color-slate .right { background: #0f172a; }
+
+.color-blue .top { background: #38bdf8; }
+.color-blue .front { background: #0ea5e9; }
+.color-blue .right { background: #0284c7; }
+
+.color-machine .top { background: #f8fafc; border: 1px solid #cbd5e1; }
+.color-machine .front { background: #e2e8f0; border: 1px solid #94a3b8; }
+.color-machine .right { background: #cbd5e1; border: 1px solid #94a3b8; }
+
+.color-belt .top { background: #f1f5f9; }
+.color-belt .front { background: #cbd5e1; }
+.color-belt .right { background: #94a3b8; }
+
+.color-tube .top { background: #f1f5f9; border: 1px solid #cbd5e1; }
+.color-tube .front { background: #e2e8f0; }
+.color-tube .right { background: #cbd5e1; }
+
+/* --- COMPONENT DETAILS --- */
+.file-label {
+  font-family: monospace;
+  font-weight: bold;
+  font-size: 14px;
+  color: #64748b;
+  transform: rotateZ(90deg);
+}
+.text-white { color: white; }
+
+/* Machine Glow Effects */
+.machine-glow {
+  width: 60%; height: 60%;
+  background: #38bdf8;
+  border-radius: 50%;
+  box-shadow: 0 0 30px #38bdf8, 0 0 60px #0ea5e9;
+  animation: pulseGlow 2s infinite alternate;
+}
+@keyframes pulseGlow {
+  0% { transform: scale(0.8); opacity: 0.6; }
+  100% { transform: scale(1.1); opacity: 1; }
+}
+
+.machine-server-racks {
+  width: 100%; height: 100%;
+  background-image: repeating-linear-gradient(0deg, transparent, transparent 10px, rgba(0,0,0,0.1) 10px, rgba(0,0,0,0.1) 15px);
+}
+
+/* Computer Monitor */
+.monitor-screen {
+  width: 90%; height: 90%;
+  background: #0f172a;
+  border-radius: 4px;
+  padding: 8px;
+  display: flex; flex-direction: column; gap: 4px;
+}
+.code-line { height: 4px; background: #38bdf8; border-radius: 2px; animation: blink 1s infinite; }
+.w-full { width: 100%; }
+.w-half { width: 50%; }
+.w-3\/4 { width: 75%; }
+.delay-1 { animation-delay: 0.3s; }
+.delay-2 { animation-delay: 0.6s; }
+@keyframes blink { 0%, 100% { opacity: 1; } 50% { opacity: 0.3; } }
+
+/* --- CONVEYOR BELT ANIMATIONS --- */
+.belt-track {
+  position: absolute;
+  width: 1000px; height: 2px;
+  background: rgba(148, 163, 184, 0.4);
+  transform: translateZ(10px);
+}
+.track-1 { top: 460px; }
+.track-2 { top: 540px; }
+
+.moving-item { position: absolute; transform-style: preserve-3d; }
+
+.moving-item.repo { animation: moveRepo 12s linear infinite; }
+.moving-item.doc { animation: moveDoc 12s linear infinite; }
+.delay-0 { animation-delay: 0s; }
+.delay-1 { animation-delay: -6s; } /* Stagger the loop perfectly */
+.delay-2 { animation-delay: -3s; }
+.delay-3 { animation-delay: -9s; }
+
+@keyframes moveRepo {
+  0% { transform: translate3d(-100px, 480px, 10px); opacity: 0; }
+  5% { opacity: 1; }
+  45% { transform: translate3d(400px, 480px, 10px); opacity: 1; }
+  50% { transform: translate3d(450px, 480px, 10px); opacity: 0; }
+  100% { transform: translate3d(450px, 480px, 10px); opacity: 0; }
+}
+
+@keyframes moveDoc {
+  0% { transform: translate3d(550px, 480px, 10px); opacity: 0; }
+  50% { transform: translate3d(550px, 480px, 10px); opacity: 0; }
+  55% { transform: translate3d(600px, 480px, 10px); opacity: 1; }
+  95% { opacity: 1; }
+  100% { transform: translate3d(1100px, 480px, 10px); opacity: 0; }
+}
+
+/* --- DATA PULSES --- */
+.data-pulse {
+  position: absolute;
+  width: 12px; height: 12px;
+  background: #38bdf8;
+  border-radius: 50%;
+  box-shadow: 0 0 15px #38bdf8;
+  transform: translateZ(10px);
+}
+.pulse-1 { animation: shootData1 3s cubic-bezier(0.4, 0, 0.2, 1) infinite; }
+.pulse-2 { animation: shootData2 3s cubic-bezier(0.4, 0, 0.2, 1) infinite; animation-delay: 1.5s; background: #8b5cf6; box-shadow: 0 0 15px #8b5cf6;}
+
+@keyframes shootData1 {
+  0% { transform: translate3d(150px, 758px, 12px); opacity: 0;}
+  10% { opacity: 1; }
+  40% { transform: translate3d(458px, 758px, 12px); opacity: 1; }
+  41% { opacity: 0; }
+  100% { opacity: 0; }
+}
+@keyframes shootData2 {
+  0% { transform: translate3d(458px, 750px, 12px); opacity: 0;}
+  40% { opacity: 0; }
+  41% { opacity: 1; }
+  90% { transform: translate3d(458px, 500px, 12px); opacity: 1; }
+  95% { opacity: 0; }
+  100% { opacity: 0; transform: translate3d(458px, 500px, 12px); }
+}

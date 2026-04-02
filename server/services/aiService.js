@@ -114,3 +114,46 @@ export const generateMasterRepoDoc = async (allChunkExplanations, repoUrl) => {
         return "Documentation synthesis failed. Please try chatting with the codebase instead.";
     }
 };
+
+// Add this to your src/services/aiService.js
+
+export const generateDocsForBatch = async (chunkBatch) => {
+    try {
+        // We use JSON mode to guarantee a programmatic response
+        const model = genAI.getGenerativeModel({ 
+            model: "gemini-2.5-flash",
+            generationConfig: { responseMimeType: "application/json" }
+        });
+
+        // Map the chunks into a clean, minimal array to save tokens
+        const promptData = chunkBatch.map((chunk, index) => ({
+            id: index, // We use the index to map the answer back to the correct chunk
+            type: chunk.type,
+            code: chunk.content
+        }));
+
+        const prompt = `
+        You are an elite Senior Software Engineer. I am providing you an array of ${chunkBatch.length} code chunks.
+        Analyze each chunk and write a concise, 1-2 sentence explanation of what it does.
+        
+        You MUST return ONLY a JSON array of objects. 
+        Each object must have exactly two keys:
+        1. "id" (must match the input id exactly)
+        2. "explanation" (your concise string explanation)
+
+        Input Chunks:
+        ${JSON.stringify(promptData)}
+        `;
+
+        const result = await model.generateContent(prompt);
+        const responseText = result.response.text();
+        
+        // Parse the guaranteed JSON response
+        const explanationsArray = JSON.parse(responseText);
+        return explanationsArray;
+
+    } catch (error) {
+        console.error("❌ Batch Documentation Error:", error);
+        return null;
+    }
+};
