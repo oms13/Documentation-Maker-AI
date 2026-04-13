@@ -1,0 +1,40 @@
+/* src/components/FloatingBackground.css */
+.floating-canvas {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  overflow: hidden;
+  z-index: 0;
+  pointer-events: none; /* 🚨 CRITICAL: Lets clicks pass through to the buttons */
+  background: radial-gradient(circle at center, #111113 0%, #09090b 100%);
+}
+
+.float-wrapper {
+  position: absolute;
+  will-change: transform;
+}
+
+.repel-item {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 1.25rem;
+  font-weight: 600;
+  opacity: 0.25; /* Base state is a faint ghost */
+  user-select: none;
+  
+  /* We now transition opacity and text-shadow alongside transform */
+  transition: transform 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275), 
+              opacity 0.3s ease, 
+              text-shadow 0.3s ease;
+              
+  will-change: transform, opacity, text-shadow;
+}
+
+/* Smooth ambient drifting */
+@keyframes ambientFloat {
+  0% { transform: translate(0px, 0px) rotate(0deg); }
+  33% { transform: translate(15px, -20px) rotate(5deg); }
+  66% { transform: translate(-10px, 15px) rotate(-5deg); }
+  100% { transform: translate(20px, 20px) rotate(2deg); }
+}
